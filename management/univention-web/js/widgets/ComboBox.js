@@ -81,8 +81,40 @@ define([
 			return this.inherited(arguments) || this.allowOtherValues;
 		},
 
+		_setValueAttr: function(value, priorityChange, displayedValue, item) {
+			if (this.allowOtherValues) {
+				// this.store.get(value).then(i => {
+					// if (!i) {
+						// this.store.newItem({
+							// id: value,
+							// label: value,
+							// $dontShowInResultList: true
+						// });
+						// this.store.save();
+					// }
+					// this.inherited(arguments);
+				// });
+
+				var args = arguments;
+				var _this = this;
+				this.store.get(value).then(function(i) {
+					if (!i) {
+						_this.store.newItem({
+							id: value,
+							label: value,
+							$dontShowInResultList: true
+						});
+						_this.store.save();
+					}
+					_this.inherited(args);
+				});
+			} else {
+				this.inherited(arguments);
+			}
+		},
+
 		_callbackSetLabel: function(result, query, options, priorityChange) {
-			if (this.allowOtherValues && query && !result.length) {
+			if (this.allowOtherValues && !result.length && query && query[this.searchAttr]) {
 				this.store.newItem({
 					id: query[this.searchAttr],
 					label: query[this.searchAttr],
