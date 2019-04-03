@@ -31,11 +31,14 @@
 define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
+	"dojo/aspect",
 	"dojo/on",
+	"dojo/when",
+	"dojo/Deferred",
 	"dijit/form/FilteringSelect",
 	"umc/widgets/_SelectMixin",
 	"umc/widgets/_FormWidgetMixin"
-], function(declare, lang, on, FilteringSelect, _SelectMixin, _FormWidgetMixin) {
+], function(declare, lang, aspect, on, when, Deferred, FilteringSelect, _SelectMixin, _FormWidgetMixin) {
 	return declare("umc.widgets.ComboBox", [ FilteringSelect , _SelectMixin, _FormWidgetMixin ], {
 		// search for the substring when typing
 		queryExpr: '*${0}*',
@@ -49,6 +52,8 @@ define([
 		autoHide: false,
 
 		_firstClick: true,
+
+		allowOtherValues: false,
 
 		postMixInProperties: function() {
 			this.inherited(arguments);
@@ -70,6 +75,33 @@ define([
 		postCreate: function() {
 			this.inherited(arguments);
 			this.on('valuesLoaded', lang.hitch(this, '_updateVisibility'));
+		},
+
+		_isValidSubset: function() {
+			return this.inherited(arguments) || this.allowOtherValues;
+		},
+
+		_callbackSetLabel: function(result, query, options, priorityChange) {
+			if (this.allowOtherValues && query && !result.length) {
+				this.store.newItem({
+					id: query[this.searchAttr],
+					label: query[this.searchAttr],
+					$dontShowInResultList: true
+				});
+				this.store.save();
+				this.store.get(query[this.searchAttr]).then(lang.hitch(this, function(item) {
+					this.inherited('_callbackSetLabel', arguments, [[item], query, options, priorityChange]);
+				}));
+			} else {
+				this.inherited(arguments);
+			}
+		},
+
+		_openResultList: function(results, query, options) {
+			results = results.filter(function(i) {
+				return !i.$dontShowInResultList;
+			});
+			this.inherited(arguments, [results, query, options]);
 		}
 	});
 });
