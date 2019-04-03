@@ -82,48 +82,27 @@ define([
 		},
 
 		_setValueAttr: function(value, priorityChange, displayedValue, item) {
-			if (this.allowOtherValues) {
-				// this.store.get(value).then(i => {
-					// if (!i) {
-						// this.store.newItem({
-							// id: value,
-							// label: value,
-							// $dontShowInResultList: true
-						// });
-						// this.store.save();
-					// }
-					// this.inherited(arguments);
-				// });
-
-				var args = arguments;
-				var _this = this;
-				this.store.get(value).then(function(i) {
-					if (!i) {
-						_this.store.newItem({
+			if (value && this.allowOtherValues) {
+				var origArgs = arguments;
+				when(this.store.get(value), lang.hitch(this, function(item) {
+					if (!item) {
+						this.store.newItem({
 							id: value,
 							label: value,
 							$dontShowInResultList: true
 						});
-						_this.store.save();
+						this.store.save();
 					}
-					_this.inherited(args);
-				});
+					this.inherited(origArgs);
+				}));
 			} else {
 				this.inherited(arguments);
 			}
 		},
 
 		_callbackSetLabel: function(result, query, options, priorityChange) {
-			if (this.allowOtherValues && !result.length && query && query[this.searchAttr]) {
-				this.store.newItem({
-					id: query[this.searchAttr],
-					label: query[this.searchAttr],
-					$dontShowInResultList: true
-				});
-				this.store.save();
-				this.store.get(query[this.searchAttr]).then(lang.hitch(this, function(item) {
-					this.inherited('_callbackSetLabel', arguments, [[item], query, options, priorityChange]);
-				}));
+			if (!result.length && query && query[this.searchAttr] && this.allowOtherValues) {
+				this.set('value', query[this.searchAttr]);
 			} else {
 				this.inherited(arguments);
 			}
@@ -131,9 +110,9 @@ define([
 
 		_openResultList: function(results, query, options) {
 			results = results.filter(function(i) {
-				return !i.$dontShowInResultList;
+				return !i.$dontShowInResultList; // $dontShowInResultList is actually an array that holds a boolean but we can just check if $dontShowInResultList is set at all
 			});
-			this.inherited(arguments, [results, query, options]);
+			this.inherited(arguments);
 		}
 	});
 });
