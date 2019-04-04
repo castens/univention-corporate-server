@@ -32,11 +32,10 @@ define([
 	"dojo/_base/declare",
 	"dojo/_base/lang",
 	"dojo/on",
-	"dojo/when",
 	"dijit/form/FilteringSelect",
 	"umc/widgets/_SelectMixin",
 	"umc/widgets/_FormWidgetMixin"
-], function(declare, lang, on, when, FilteringSelect, _SelectMixin, _FormWidgetMixin) {
+], function(declare, lang, on, FilteringSelect, _SelectMixin, _FormWidgetMixin) {
 	return declare("umc.widgets.ComboBox", [ FilteringSelect , _SelectMixin, _FormWidgetMixin ], {
 		// search for the substring when typing
 		queryExpr: '*${0}*',
@@ -50,8 +49,6 @@ define([
 		autoHide: false,
 
 		_firstClick: true,
-
-		allowOtherValues: false,
 
 		postMixInProperties: function() {
 			this.inherited(arguments);
@@ -73,44 +70,6 @@ define([
 		postCreate: function() {
 			this.inherited(arguments);
 			this.on('valuesLoaded', lang.hitch(this, '_updateVisibility'));
-		},
-
-		_isValidSubset: function() {
-			return this.inherited(arguments) || this.allowOtherValues;
-		},
-
-		_setValueAttr: function(value, priorityChange, displayedValue, item) {
-			if (value && this.allowOtherValues) {
-				var origArgs = arguments;
-				when(this.store.get(value), lang.hitch(this, function(item) {
-					if (!item) {
-						this.store.newItem({
-							id: value,
-							label: value,
-							$dontShowInResultList: true
-						});
-						this.store.save();
-					}
-					this.inherited(origArgs);
-				}));
-			} else {
-				this.inherited(arguments);
-			}
-		},
-
-		_callbackSetLabel: function(result, query, options, priorityChange) {
-			if (!result.length && query && query[this.searchAttr] && this.allowOtherValues) {
-				this.set('value', query[this.searchAttr]);
-			} else {
-				this.inherited(arguments);
-			}
-		},
-
-		_openResultList: function(results, query, options) {
-			results = results.filter(function(i) {
-				return !i.$dontShowInResultList; // $dontShowInResultList is actually an array that holds a boolean but we can just check if $dontShowInResultList is set at all
-			});
-			this.inherited(arguments);
 		}
 	});
 });
