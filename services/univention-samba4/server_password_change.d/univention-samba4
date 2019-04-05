@@ -49,6 +49,18 @@ set_machine_secret() {
 
 	## 2. replace random machine secret in SAM with /etc/machine.secret
 	samba-tool user setpassword "${hostname}\$" --newpassword="$(cat /etc/machine.secret)"
+	if [ "$?" -ne "0" ]; then
+		ldbmodify -H /var/lib/samba/private/secrets.ldb <<-%EOF
+		dn: flatname=${windows_domain},cn=Primary Domains
+		changetype: modify
+		replace: secret
+		secret: $(cat /etc/machine.secret.old | tail -n 1 | sed 's/[0-9]*: //g')
+		-
+		replace: msDS-KeyVersionNumber
+		msDS-KeyVersionNumber: $old_kvno
+		-
+		%EOF
+	fi
 }
 
 if [ "$1" = "postchange" ]; then
